@@ -11,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,13 +39,26 @@ public class BooksController {
         try {
             return new ResponseEntity<>(new ApiResponse(bookService.publish(request)), HttpStatus.OK);
         } catch (Exception e) {
-            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-
-            if (e.getMessage().equals(Constants.Unauthorized)) status = HttpStatus.UNAUTHORIZED;
-            if (e.getMessage().equals(Constants.BadRequest)) status = HttpStatus.BAD_REQUEST;
-            
-            return new ResponseEntity<>(new ApiResponse(e.getMessage()), status);
+            return manageResponeException(e);
         }
+    }
+
+    @PutMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> update(@RequestBody PublishBookRequest request, @PathVariable("id") long id) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(bookService.update(id, request)), HttpStatus.OK);
+        } catch (Exception e) {
+            return manageResponeException(e);
+        }
+    }
+
+    private ResponseEntity<ApiResponse> manageResponeException(Exception e) {
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+
+        if (e.getMessage().equals(Constants.Unauthorized)) status = HttpStatus.UNAUTHORIZED;
+        if (e.getMessage().equals(Constants.BadRequest)) status = HttpStatus.BAD_REQUEST;
+            
+        return new ResponseEntity<>(new ApiResponse(e.getMessage()), status);
     }
 
 }
