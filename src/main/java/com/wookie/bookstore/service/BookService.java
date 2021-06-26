@@ -16,4 +16,6 @@ public interface BookService {
 
     public BookModel update(long id, PublishBookRequest request) throws Exception;
 
+    public Boolean delete(long id) throws Exception;
+
 }

@@ -30,7 +30,7 @@ public class BookEntity {
     private String description;
 
     @JoinColumn(name = "AUTHOR")
-    @ManyToOne(cascade = CascadeType.REMOVE)
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private UserEntity author;
 
     @Column(name = "COVER_IMAGE")

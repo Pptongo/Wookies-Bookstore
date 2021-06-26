@@ -12,6 +12,7 @@ import com.wookie.bookstore.persistance.repository.UserRepository;
 import com.wookie.bookstore.requests.PublishBookRequest;
 import com.wookie.bookstore.service.BookService;
 import com.wookie.bookstore.shared.Constants;
+import com.wookie.bookstore.shared.Messages;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -82,10 +83,10 @@ public class BookServiceImpl implements BookService {
                         
                         book = new BookModel(savedBook);
                     } else {
-                        throw new Exception("You cannot edit this book, since you are not the author!");
+                        throw new Exception(Messages.UnauthorizedAccessToTheBook);
                     }
                 } else {
-                    throw new Exception("The book doesn't exists");
+                    throw new Exception(Messages.BookNotExists);
                 }
             } else {
                 throw new Exception(Constants.Unauthorized);
@@ -95,6 +96,31 @@ public class BookServiceImpl implements BookService {
         }
         
         return book;
+    }
+
+    @Override
+    public Boolean delete(long id) throws Exception {
+        BookEntity savedBook = bookRepository.findById(id).orElse(null);
+        Boolean deleted = false;
+
+        if (savedBook != null) {
+            UserEntity user = getAuthenticatedUser();
+
+            if (user != null) {
+                if (savedBook.getAuthor().getId() == user.getId()) {
+                    bookRepository.delete(savedBook);
+                    deleted = true;
+                } else {
+                    throw new Exception(Messages.UnauthorizedAccessToTheBook);
+                }
+            } else {
+                throw new Exception(Constants.Unauthorized);
+            }
+        } else {
+            throw new Exception(Messages.BookNotExists);
+        }
+
+        return deleted;
     }
 
     private UserEntity getAuthenticatedUser() {
