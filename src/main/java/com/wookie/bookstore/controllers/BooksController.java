@@ -43,6 +43,15 @@ public class BooksController {
         }
     }
 
+    @GetMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> details(@PathVariable("id") long id) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(bookService.details(id)), HttpStatus.OK);
+        } catch (Exception e) {
+            return manageResponeException(e);
+        }
+    }
+
     @PutMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> update(@RequestBody PublishBookRequest request, @PathVariable("id") long id) {
         try {

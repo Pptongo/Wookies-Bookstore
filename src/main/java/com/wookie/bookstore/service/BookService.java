@@ -12,6 +12,8 @@ public interface BookService {
 
     public BookModel publish(PublishBookRequest request) throws Exception;
 
+    public BookModel details(long id);
+
     public BookModel update(long id, PublishBookRequest request) throws Exception;
 
 }

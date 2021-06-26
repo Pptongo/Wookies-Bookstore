@@ -56,6 +56,12 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
+    public BookModel details(long id) {
+        BookEntity book = bookRepository.findById(id).orElse(null);
+        return book != null ? new BookModel(book) : null;
+    }
+
+    @Override
     public BookModel update(long id, PublishBookRequest request) throws Exception {
         BookModel book = null;
 
@@ -66,14 +72,18 @@ public class BookServiceImpl implements BookService {
                 BookEntity savedBook = bookRepository.findById(id).orElse(null);
 
                 if (savedBook != null) {
-                    savedBook.setTitle(request.getTitle());
-                    savedBook.setDescription(request.getDescription());
-                    savedBook.setCoverImage(request.getCoverImage());
-                    savedBook.setPrice(request.getPrice());
-                    
-                    bookRepository.save(savedBook);
-                    
-                    book = new BookModel(savedBook);
+                    if (savedBook.getAuthor().getId() == user.getId()) {
+                        savedBook.setTitle(request.getTitle());
+                        savedBook.setDescription(request.getDescription());
+                        savedBook.setCoverImage(request.getCoverImage());
+                        savedBook.setPrice(request.getPrice());
+                        
+                        bookRepository.save(savedBook);
+                        
+                        book = new BookModel(savedBook);
+                    } else {
+                        throw new Exception("You cannot edit this book, since you are not the author!");
+                    }
                 } else {
                     throw new Exception("The book doesn't exists");
                 }
