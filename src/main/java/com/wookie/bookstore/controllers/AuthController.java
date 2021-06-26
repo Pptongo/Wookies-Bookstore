@@ -1,6 +1,7 @@
 package com.wookie.bookstore.controllers;
 
 import com.wookie.bookstore.requests.CredentialsRequest;
+import com.wookie.bookstore.response.ApiResponse;
 import com.wookie.bookstore.service.impl.AuthServiceImpl;
 import com.wookie.bookstore.shared.JwtUtil;
 
@@ -35,17 +36,17 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> auth(@RequestBody CredentialsRequest credentials) {
+    public ResponseEntity<ApiResponse> auth(@RequestBody CredentialsRequest credentials) {
         try {
             authenticate(credentials.getUsername(), credentials.getPassword());
             final UserDetails userDetails = authService.loadUserByUsername(credentials.getUsername());
             final String token = jwtUtil.generateToken(userDetails);
 
-            if (userDetails != null) return new ResponseEntity<>(token, HttpStatus.OK);
+            if (userDetails != null) return new ResponseEntity<>(new ApiResponse((Object) token), HttpStatus.OK);
 
-            return new ResponseEntity<>("INVALID_USER", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(new ApiResponse("INVALID_USER"), HttpStatus.UNAUTHORIZED);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>(new ApiResponse(e.getMessage()), HttpStatus.UNAUTHORIZED);
         }
     }
 

@@ -1,9 +1,18 @@
 package com.wookie.bookstore.controllers;
 
+import com.wookie.bookstore.requests.PublishBookRequest;
+import com.wookie.bookstore.response.ApiResponse;
+import com.wookie.bookstore.response.BooksResponse;
+import com.wookie.bookstore.service.BookService;
+import com.wookie.bookstore.shared.Constants;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,9 +20,30 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = "/api/1.0/books")
 public class BooksController {
 
-    @GetMapping(value = "list", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Object> getAll() {
-        return new ResponseEntity<Object>("", HttpStatus.OK);
+    @Autowired
+    private BookService bookService;
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> getAll() {
+        try {
+            return new ResponseEntity<>(new ApiResponse(new BooksResponse(BooksResponse.convertToModel(bookService.getAll()))), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping(value = "/book", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> publish(@RequestBody PublishBookRequest request) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(bookService.publish(request)), HttpStatus.OK);
+        } catch (Exception e) {
+            HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+
+            if (e.getMessage().equals(Constants.Unauthorized)) status = HttpStatus.UNAUTHORIZED;
+            if (e.getMessage().equals(Constants.BadRequest)) status = HttpStatus.BAD_REQUEST;
+            
+            return new ResponseEntity<>(new ApiResponse(e.getMessage()), status);
+        }
     }
 
 }
