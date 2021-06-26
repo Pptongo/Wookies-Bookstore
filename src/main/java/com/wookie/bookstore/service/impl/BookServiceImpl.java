@@ -42,6 +42,8 @@ public class BookServiceImpl implements BookService {
             UserEntity user = getAuthenticatedUser();
 
             if (user != null) {
+                if (user.isDarthVader()) throw new Exception(Messages.DarthVader);
+
                 BookEntity entityBook = new BookEntity(request, user);
                 bookRepository.save(entityBook);
 

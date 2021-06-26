@@ -67,5 +67,17 @@ public class UserEntity {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public Boolean isDarthVader() {
+        Boolean isDarthVader = false;
+
+        if (username != null) {
+            String usu = username.toLowerCase();
+
+            if (usu.equals("darth") || usu.equals("vader") || usu.equals("darthvader")) isDarthVader = true;
+        }
+
+        return isDarthVader;
+    }
     
 }
