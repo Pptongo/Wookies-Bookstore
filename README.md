@@ -1,45 +1,12 @@
-### Objective
+# Book Store
+Application created for all Wookies who want to publish a book with their adventures for others.
 
-Your assignment is to implement a bookstore REST API using Java and Spring.
+# Deploy application
+Once you downlaod the entire repository, you are required to following the next steps:
 
-### Brief
-
-Lohgarra, a Wookie from Kashyyyk, has a great idea. She wants to build a marketplace that allows her and her friends to
-self-publish their adventures and sell them online to other Wookies. The profits would then be collected and donated to purchase
-medical supplies for an impoverished Ewok settlement.
-
-### Tasks
-
--   Implement assignment using:
-    -   Language: **Java**
-    -   Framework: **Spring**
--   Implement a REST API returning JSON or XML based on the `Content-Type` header
--   Implement a custom user model with a "author pseudonym" field
--   Implement a book model. Each book should have a title, description, author (your custom user model), cover image and price
-    -   Choose the data type for each field that makes the most sense
--   Provide an endpoint to authenticate with the API using username, password and return a JWT
--   Implement REST endpoints for the `/books` resource
-    -   No authentication required
-    -   Allows only GET (List/Detail) operations
-    -   Make the List resource searchable with query parameters
--   Provide REST resources for the authenticated user
-    -   Implement the typical CRUD operations for this resource
-    -   Implement an endpoint to unpublish a book (DELETE)
--   Implement API tests for all endpoints
-
-### Evaluation Criteria
-
--   **Java** best practices
--   If you are using a framework make sure best practices are followed for models, configuration and tests
--   Write API tests for all implemented endpoints
--   Make sure that users may only unpublish their own books
--   Bonus: Make sure the user _Darth Vader_ is unable to publish his work on Wookie Books
-
-### CodeSubmit
-
-Please organize, design, test and document your code as if it were
-going into production - then push your changes to the master branch. After you have pushed your code, you may submit the assignment on the assignment page.
-
-All the best and happy coding,
-
-The Builder Prime Team
+1. Open the file `application.properties` to set the connection settings. You can find the file under `src/main/resources/application.properties`.
+2. Set the IP or Domain Name for the property: `spring.datasource.url`
+3. Set the username and password for properties: `spring.datasource.username` and `spring.datasource.password`
+4. Run `mvn install` command to download and install all Maven dependencies for the project.
+5. You can set a different port for the application, the default one is `8080` but if you are using already that port, you can define a different one.
+6. Run the application using the following command: `mvn spring-boot:run`
