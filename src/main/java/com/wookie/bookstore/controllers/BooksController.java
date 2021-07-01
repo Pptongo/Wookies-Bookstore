@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
 /**
  * Manage all the request related with Books.
  * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
@@ -30,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(value = "/api/1.0/books")
+@Api(tags = "Books")
 public class BooksController {
 
     /**
@@ -51,9 +55,10 @@ public class BooksController {
      * @param description Optiona string to be used to filter the books by Description.
      * @return The @see {@link BookResponse} that contains all the books for the search
      */
+    @ApiOperation(value = "Get a list of books.")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse> getAll(@RequestParam("title") Optional<String> title,
-        @RequestParam("author") Optional<String> author, @RequestParam("description") Optional<String> description) {
+    public ResponseEntity<ApiResponse> getAll(@RequestParam(value = "title", required = false) Optional<String> title,
+        @RequestParam(value = "author", required = false) Optional<String> author, @RequestParam(value = "description", required = false) Optional<String> description) {
         try {
             return new ResponseEntity<>(new ApiResponse(new BooksResponse(BooksResponse.convertToModel(bookService.getAll(title, author, description)))), HttpStatus.OK);
         } catch (Exception e) {
@@ -69,6 +74,7 @@ public class BooksController {
      * @param request The @see {@link PublishBookRequest} with all book parameters.
      * @return The @see {@link BookModel} for created book.
      */
+    @ApiOperation(value = "Create a new book.")
     @PostMapping(value = "/book", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> publish(@RequestBody PublishBookRequest request) {
         try {
@@ -86,6 +92,7 @@ public class BooksController {
      * @param id The id of the book who want to see the details
      * @return The @see {@link BookModel} with all the details of the selected book.
      */
+    @ApiOperation(value = "Get the details of a book.")
     @GetMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> details(@PathVariable("id") long id) {
         try {
@@ -104,6 +111,7 @@ public class BooksController {
      * @param id The id of the book who will be updated.
      * @return The @see {@link BookModel} with updated properties for the book.
      */
+    @ApiOperation(value = "Update the information of a book.")
     @PutMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> update(@RequestBody PublishBookRequest request, @PathVariable("id") long id) {
         try {
@@ -121,6 +129,7 @@ public class BooksController {
      * @param id The id of the book to be deleted.
      * @return The @see {@link ApiResponse} with the status of the operation.
      */
+    @ApiOperation(value = "Delete an existing book.")
     @DeleteMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> delete(@PathVariable("id") long id) {
         try {

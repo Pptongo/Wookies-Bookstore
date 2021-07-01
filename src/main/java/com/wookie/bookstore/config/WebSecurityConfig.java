@@ -62,9 +62,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        final String[] swaggerUrls = new String[] { "/swagger-resources/**", "/swagger-ui.html", "/swagger-ui/**", "/v2/api-docs", "/webjars/**" };
+
         http.formLogin().disable()
             .csrf().disable()
             .authorizeRequests()
+            .antMatchers(swaggerUrls).permitAll()
             .antMatchers("/api/**/auth").permitAll()
             .antMatchers("/api/**/books").permitAll()
             .anyRequest().authenticated()

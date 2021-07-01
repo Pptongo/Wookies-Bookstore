@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
 /**
  * Manage all the Authentication requests.
  * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping(value = "/api/1.0/auth")
+@Api(tags = "Authentication")
 public class AuthController {
     
     /**
@@ -67,6 +71,7 @@ public class AuthController {
      * @param credentials The @see {@link CredentialRequest} that contains the username and password.
      * @return @see {@link ApiResponse} The status of the authentication.
      */
+    @ApiOperation(value = "Authenticate the user")
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> auth(@RequestBody CredentialsRequest credentials) {
         try {
