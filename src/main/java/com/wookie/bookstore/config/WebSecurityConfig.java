@@ -15,19 +15,51 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * The web security configuration for all the application is defined here.
+ * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+ * @version 1.0
+ * @since 1.0
+ */
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+    /**
+     * Inject the JWT authentication entry point to handle the error.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Autowired
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     
+    /**
+     * Inject the JWT request filter to do before any other call.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 
+    /**
+     * Inject the authentication service.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Autowired
     private AuthServiceImpl authServiceImpl;
 
+    /**
+     * Define the web security configuration.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     * @param http The @see {@link HttpSecurity} object to set the configurations.
+     * @throws Exception
+     */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.formLogin().disable()
@@ -46,17 +78,38 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
+    /**
+     * Configure the authentication method used to authenticate the user.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     * @param auth The @see {@link AuthenticationManagerBuilder} responsible for the authentication.
+     * @throws Exception
+     */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(authServiceImpl).passwordEncoder(passwordEncoder());
     }
 
+    /**
+     * Create a new Bean to be used as authentication manager.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
     protected AuthenticationManager authenticationManager() throws Exception {
         return super.authenticationManager();
     }
 
+    /**
+     * Create a new Bean to set the encrypter method.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     * @return
+     */
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

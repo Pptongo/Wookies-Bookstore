@@ -20,15 +20,44 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.jsonwebtoken.ExpiredJwtException;
 
+/**
+ * This component is created to add a filter to all request to the web services to manage the JWT authentication.
+ * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+ * @version 1.0
+ * @since 1.0
+ */
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
+    /**
+     * Inject the authentication services.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Autowired
     private AuthServiceImpl authService;
 
+    /**
+     * Inject the JWT utility.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Autowired
     private JwtUtil jwtUtil;
     
+    /**
+     * Add the filter rules and apply.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     * @param req The @see {@link HttpServletRequest} to the web service.
+     * @param res The @see {@link HttpServletResponse} to be delivered to the requested.
+     * @param chain The @see {@link FilterChain} passed through all filters.
+     * @throws ServletException
+     * @throws IOException
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
         final String requestTokenHeader = req.getHeader("Authorization");

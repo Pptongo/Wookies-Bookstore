@@ -1,5 +1,7 @@
 package com.wookie.bookstore.controllers;
 
+import java.util.Optional;
+
 import com.wookie.bookstore.requests.PublishBookRequest;
 import com.wookie.bookstore.response.ApiResponse;
 import com.wookie.bookstore.response.BooksResponse;
@@ -17,17 +19,25 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Manage all the request related with Books.
  * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
  * @version 1.0
+ * @since 1.0
  */
 @RestController
 @RequestMapping(value = "/api/1.0/books")
 public class BooksController {
 
+    /**
+     * Inject the Book Service that contains all the business logic.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Autowired
     private BookService bookService;
 
@@ -35,23 +45,29 @@ public class BooksController {
      * Get all books from the server.
      * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
      * @version 1.0
-     * @return
+     * @since 1.0
+     * @param title Optiona string to be used to filter the books by Title.
+     * @param author Optiona string to be used to filter the books by Author's name.
+     * @param description Optiona string to be used to filter the books by Description.
+     * @return The @see {@link BookResponse} that contains all the books for the search
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse> getAll() {
+    public ResponseEntity<ApiResponse> getAll(@RequestParam("title") Optional<String> title,
+        @RequestParam("author") Optional<String> author, @RequestParam("description") Optional<String> description) {
         try {
-            return new ResponseEntity<>(new ApiResponse(new BooksResponse(BooksResponse.convertToModel(bookService.getAll()))), HttpStatus.OK);
+            return new ResponseEntity<>(new ApiResponse(new BooksResponse(BooksResponse.convertToModel(bookService.getAll(title, author, description)))), HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(new ApiResponse(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Create a new book and publish it
+     * Create a new book and publish it.
      * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
      * @version 1.0
-     * @param request The object request with all book parameters
-     * @return
+     * @since 1.0
+     * @param request The @see {@link PublishBookRequest} with all book parameters.
+     * @return The @see {@link BookModel} for created book.
      */
     @PostMapping(value = "/book", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> publish(@RequestBody PublishBookRequest request) {
@@ -63,11 +79,12 @@ public class BooksController {
     }
 
     /**
-     * Show the details for a book
+     * Show the details for a book.
      * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
      * @version 1.0
+     * @since 1.0
      * @param id The id of the book who want to see the details
-     * @return
+     * @return The @see {@link BookModel} with all the details of the selected book.
      */
     @GetMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> details(@PathVariable("id") long id) {
@@ -82,9 +99,10 @@ public class BooksController {
      * Update the book information.
      * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
      * @version 1.0
-     * @param request The request object used to update the properties of the book
+     * @since 1.0
+     * @param request The @see {@link PublishBookRequest} used to update the properties of the book.
      * @param id The id of the book who will be updated.
-     * @return
+     * @return The @see {@link BookModel} with updated properties for the book.
      */
     @PutMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> update(@RequestBody PublishBookRequest request, @PathVariable("id") long id) {
@@ -99,8 +117,9 @@ public class BooksController {
      * Delete an existing book.
      * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
      * @version 1.0
+     * @since 1.0
      * @param id The id of the book to be deleted.
-     * @return
+     * @return The @see {@link ApiResponse} with the status of the operation.
      */
     @DeleteMapping(value = "/book/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> delete(@PathVariable("id") long id) {
@@ -115,8 +134,9 @@ public class BooksController {
      * Manage the object to be responded by the service for any exception.
      * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
      * @version 1.0
-     * @param e The Exception to be managed.
-     * @return
+     * @since 1.0
+     * @param e The @see {@link Exception} to be managed.
+     * @return The @see {@link ResponseEntity} with the correct @see {@link HttpStatus} and @see {@link ApiResponse} with the failure.
      */
     private ResponseEntity<ApiResponse> manageResponeException(Exception e) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;

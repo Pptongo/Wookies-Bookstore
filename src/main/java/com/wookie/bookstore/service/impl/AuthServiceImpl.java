@@ -14,12 +14,32 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+/**
+ * The service that contains all the business logic for Authentication methods.
+ * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+ * @version 1.0
+ * @since 1.0
+ */
 @Service
 public class AuthServiceImpl implements UserDetailsService {
 
+    /**
+     * Inject the User repository to run all database operations for user.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     */
     @Autowired
     private UserRepository userRepository;
     
+    /**
+     * Load a user that matchs with the passed username.
+     * @author Jose Luis Perez Olvera <sistem_pp@hotmail.com>
+     * @version 1.0
+     * @since 1.0
+     * @param username The username to be used in the search.
+     * @return The @see {@link UserDetails} for the user found.
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity user = null;

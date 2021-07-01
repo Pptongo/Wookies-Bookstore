@@ -7,22 +7,34 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wookie.bookstore.models.BookModel;
 import com.wookie.bookstore.persistance.entities.BookEntity;
 import com.wookie.bookstore.persistance.repository.BookRepository;
-import com.wookie.bookstore.service.BookService;
+import com.wookie.bookstore.requests.CredentialsRequest;
+import com.wookie.bookstore.requests.PublishBookRequest;
+import com.wookie.bookstore.response.ApiResponse;
+import com.wookie.bookstore.response.BooksResponse;
 import com.wookie.bookstore.service.impl.AuthServiceImpl;
 import com.wookie.bookstore.shared.JwtUtil;
 
@@ -32,9 +44,6 @@ class BookStoreApplicationTests {
 	
 	@Autowired
 	private MockMvc mockMvc;
-
-	@Autowired
-	private BookService bookService;
 
 	@Autowired
 	private BookRepository bookRepository;
@@ -47,96 +56,221 @@ class BookStoreApplicationTests {
 
 	@Test
 	public void testAuthService() throws Exception {
-		String request = "{\"username\": \"admin\", \"password\": \"anJ?FS6w\"}";
+		String username = "admin";
+		CredentialsRequest req = new CredentialsRequest(username, "anJ?FS6w");
 
-		this.mockMvc.perform(post("/api/1.0/auth").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(request))
-			.andDo(print())
+		ResultActions resultActions = this.mockMvc.perform(post("/api/1.0/auth").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(parseObjToJson(req)))
 			.andExpect(status().isOk())
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+
+		ApiResponse apiResponse = getApiResponseFromResultActions(resultActions);
+
+		assertNotNull(apiResponse);
+		assertTrue(apiResponse.getStatus());
+		assertNull(apiResponse.getMessage());
+		assertNotNull(apiResponse.getBody());
+
+		String jwt = (String) apiResponse.getBody();
+
+		assertTrue(jwtUtil.validateToken(jwt, getUserDetails(username)));
 	}
 
 	@Test
 	public void testBadAuthService() throws Exception {
-		String request = "{\"username\": \"admin\", \"password\": \"nonpassword\"}";
+		String username = "admin";
+		CredentialsRequest req = new CredentialsRequest(username, "");
 
-		this.mockMvc.perform(post("/api/1.0/auth").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(request))
-			.andDo(print())
+		ResultActions resultActions = this.mockMvc.perform(post("/api/1.0/auth").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(parseObjToJson(req)))
 			.andExpect(status().isUnauthorized())
 			.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+
+		ApiResponse apiResponse = getApiResponseFromResultActions(resultActions);
+
+		assertNotNull(apiResponse);
+		assertFalse(apiResponse.getStatus());
+		assertNotNull(apiResponse.getMessage());
+		assertNull(apiResponse.getBody());
 	}
 
 	@Test
-	public void testPublicBookList() throws Exception {
-		List<BookEntity> books = bookService.getAll();
-		assertNotNull(books);
-		assertTrue(books.size() > 0);
+	public void testGetAllBooks() throws Exception {
+		List<BookEntity> booksFromDb = (List<BookEntity>) bookRepository.findAll();
+		
+		assertNotNull(booksFromDb);
+		assertTrue(booksFromDb.size() > 0);
 
-		this.mockMvc.perform(get("/api/1.0/books/"))
-			.andDo(print())
+		ResultActions resultActions = this.mockMvc.perform(get("/api/1.0/books").accept(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk());
+		
+		ApiResponse apiResponse = getApiResponseFromResultActions(resultActions);
+
+		assertNotNull(apiResponse);
+		assertTrue(apiResponse.getStatus());
+		assertNull(apiResponse.getMessage());
+		assertNotNull(apiResponse.getBody());
+		
+		BooksResponse books = (BooksResponse) parseBody(apiResponse.getBody(), BooksResponse.class);
+		
+		assertNotNull(books);
+		assertEquals(booksFromDb.size(), books.getBooks().size());
 	}
 
 	@Test
 	public void testPublishBook() throws Exception {
-		List<BookEntity> books = (List<BookEntity>) bookRepository.findAll();
+		List<BookEntity> booksBeforeSaved = (List<BookEntity>) bookRepository.findAll();
+		PublishBookRequest req = getBookRequest();
 
-		String request = "{\"title\": \"My second book\", \"description\": \"This is my second published book\", \"coverImage\": \"https://cdn.shopify.com/s/files/1/0748/0217/products/ewok-no-evil_skaggs.jpg?v=1553735580\", \"price\": \"30.99\"}";
 		String jwt = getJwt("admin");
-
 		assertTrue(!jwt.isEmpty());
 		
-		this.mockMvc.perform(post("/api/1.0/books/book").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + jwt).content(request))
-			.andDo(print())
+		ResultActions resultActions = this.mockMvc.perform(post("/api/1.0/books/book").contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", "Bearer " + jwt).content(parseObjToJson(req)))
 			.andExpect(status().isOk());
+			
+		ApiResponse apiResponse = getApiResponseFromResultActions(resultActions);
 
-		List<BookEntity> newBooksList = (List<BookEntity>) bookRepository.findAll();
+		assertNotNull(apiResponse);
+		assertTrue(apiResponse.getStatus());
+		assertNotNull(apiResponse.getBody());
+		assertNull(apiResponse.getMessage());
 
-		assertTrue(books.size() < newBooksList.size());
+		BookModel book = (BookModel) parseBody(apiResponse.getBody(), BookModel.class);
+
+		assertNotNull(book);
+
+		List<BookEntity> booksAfterSaved = (List<BookEntity>) bookRepository.findAll();
+
+		assertTrue(booksBeforeSaved.size() < booksAfterSaved.size());
 	}
 
 	@Test
 	public void testUpdateBook() throws Exception {
-		String username = "admin";
-		String newTitle = "My new title";
-		String request = "{\"title\": \"" + newTitle + "\", \"description\": \"This is my second published book\", \"coverImage\": \"https://cdn.shopify.com/s/files/1/0748/0217/products/ewok-no-evil_skaggs.jpg?v=1553735580\", \"price\": \"30.99\"}";
-		String jwt = getJwt("admin");
-		
-		List<BookEntity> books = (List<BookEntity>) bookRepository.findAll();
-		BookEntity book = books != null ? books.stream().filter(b -> b.getAuthor().getUsername().equals(username)).findFirst().orElse(null) : null;
-		
-		assertNotNull(book);
-		assertTrue(!jwt.isEmpty());
-		
-		this.mockMvc.perform(put("/api/1.0/books/book/" + book.getId()).contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + jwt).content(request))
-			.andDo(print())
-			.andExpect(status().isOk());
-		
-		BookEntity updatedBook = bookRepository.findById(book.getId()).orElse(null);
+		BookEntity bookBeforeUpdate = bookRepository.findById(1l).orElse(null);
+		assertNotNull(bookBeforeUpdate);
 
-		assertNotNull(updatedBook);
+		PublishBookRequest req = getBookRequest();
+
+		String jwt = getJwt("admin");
+		assertTrue(!jwt.isEmpty());
+
+		ResultActions resultActions = this.mockMvc.perform(put("/api/1.0/books/book/" + bookBeforeUpdate.getId())
+			.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + jwt)
+			.content(parseObjToJson(req)))
+			.andExpect(status().isOk());
+
+		ApiResponse apiResponse = getApiResponseFromResultActions(resultActions);
+
+		assertNotNull(apiResponse);
+		assertTrue(apiResponse.getStatus());
+		assertNotNull(apiResponse.getBody());
+		assertNull(apiResponse.getMessage());
+
+		BookModel book = (BookModel) parseBody(apiResponse.getBody(), BookModel.class);
+
+		assertNotNull(book);
+
+		BookEntity bookAfterUpdate = bookRepository.findById(1l).orElse(null);
+
+		assertNotNull(bookAfterUpdate);
+		assertNotEquals(bookBeforeUpdate.getTitle(), bookAfterUpdate.getTitle());
+		assertEquals(book.getTitle(), bookAfterUpdate.getTitle());
 	}
 
 	@Test
 	public void testDeleteBook() throws Exception {
-		String username = "admin";
+		List<BookEntity> booksBeforeDelete = (List<BookEntity>) bookRepository.findAll();
 
-		List<BookEntity> books = (List<BookEntity>) bookRepository.findAll();
-		long bookId = books != null ? books.stream().filter(book -> book.getAuthor().getUsername().equals(username)).findFirst().orElse(new BookEntity()).getId() : 0;
+		assertTrue(booksBeforeDelete != null && booksBeforeDelete.size() > 0);
 
-		String jwt = getJwt(username);
-
+		String jwt = getJwt("admin");
 		assertTrue(!jwt.isEmpty());
-		assertNotNull(books);
-		assertTrue(bookId > 0);
 
-		this.mockMvc.perform(delete("/api/1.0/books/book/" + bookId).header("Authorization", "Bearer " + jwt))
-			.andDo(print())
+		ResultActions resultActions = this.mockMvc.perform(delete("/api/1.0/books/book/" + 1l)
+			.contentType(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + jwt))
 			.andExpect(status().isOk());
+		
+		ApiResponse apiResponse = getApiResponseFromResultActions(resultActions);
+
+		assertNotNull(apiResponse);
+		assertTrue(apiResponse.getStatus());
+		assertNull(apiResponse.getBody());
+		assertNull(apiResponse.getMessage());
+
+		List<BookEntity> booksAfterDelete = (List<BookEntity>) bookRepository.findAll();
+
+		assertTrue(booksAfterDelete != null && booksAfterDelete.size() > 0);
+		assertTrue(booksBeforeDelete.size() > booksAfterDelete.size());
+	}
+
+	@Test
+	public void testDeleteBookFromAnotherAuthor() throws Exception {
+		List<BookEntity> booksBeforeDelete = (List<BookEntity>) bookRepository.findAll();
+
+		assertTrue(booksBeforeDelete != null && booksBeforeDelete.size() > 0);
+
+		String jwt = getJwt("admin");
+		assertTrue(!jwt.isEmpty());
+
+		ResultActions resultActions = this.mockMvc.perform(delete("/api/1.0/books/book/" + 2l)
+			.contentType(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + jwt))
+			.andExpect(status().isInternalServerError());
+		
+		ApiResponse apiResponse = getApiResponseFromResultActions(resultActions);
+
+		assertNotNull(apiResponse);
+		assertFalse(apiResponse.getStatus());
+		assertNull(apiResponse.getBody());
+		assertNotNull(apiResponse.getMessage());
+
+		List<BookEntity> booksAfterDelete = (List<BookEntity>) bookRepository.findAll();
+
+		assertTrue(booksAfterDelete != null && booksAfterDelete.size() > 0);
+		assertEquals(booksBeforeDelete.size(), booksAfterDelete.size());	
 	}
 
 	private String getJwt(String username) {
-		final UserDetails userDetails = authService.loadUserByUsername(username);
+		final UserDetails userDetails = getUserDetails(username);
         return userDetails != null ? jwtUtil.generateToken(userDetails) : "";
+	}
+
+	private UserDetails getUserDetails(String username) {
+		return authService.loadUserByUsername(username);
+	}
+
+	private PublishBookRequest getBookRequest() {
+		PublishBookRequest publishBookRequest = new PublishBookRequest();
+		publishBookRequest.setTitle("The Phantom Menace");
+		publishBookRequest.setDescription("This is the first episode from the full series of 9 books.");
+		publishBookRequest.setCoverImage("https://m.media-amazon.com/images/M/MV5BYTRhNjcwNWQtMGJmMi00NmQyLWE2YzItODVmMTdjNWI0ZDA2XkEyXkFqcGdeQXVyNTAyODkwOQ@@._V1_.jpg");
+		publishBookRequest.setPrice(35.0);
+
+		return publishBookRequest;
+	}
+
+	private String parseObjToJson(Object obj) throws JsonMappingException, JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.writeValueAsString(obj);
+	}
+
+	private ApiResponse parseResponse(String json) throws JsonMappingException, JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		ApiResponse apiResponse = mapper.readValue(json, ApiResponse.class);
+
+		return apiResponse;
+	}
+
+	private <T> Object parseBody(Object body, Class<T> clazz) throws JsonMappingException, JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		String json = mapper.writeValueAsString(body);
+
+		return mapper.readValue(json, clazz);
+	}
+
+	private ApiResponse getApiResponseFromResultActions(ResultActions resultActions) throws Exception {
+		MvcResult result = resultActions.andReturn();
+		String contentAsString = result.getResponse().getContentAsString();
+
+		return parseResponse(contentAsString);
 	}
 
 }
