@@ -22,6 +22,7 @@ To run the Unit Tests methods its necesary run the command `mvn test`, once all 
 If you want to run a single Unit Test, you can do it running the following command `mvn -Dtest=BookStoreApplicationTests#methodname test`, replacing the methodname keywork for any of the following methods:
 
 > |Test methods|Description|
+> |-|-|
 > |testAuthService|Verify the authentication method|
 > |testBadAuthService|Check if the auth method return bad credentials if passed through it a bad password|
 > |testGetAllBooks|Verify the WebService to get all books|
